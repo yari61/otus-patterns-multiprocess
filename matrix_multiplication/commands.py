@@ -9,7 +9,7 @@ from .interfaces import IMatrix
 from .adapters import NDArrayMatrixAdapter
 
 
-class CalculateCellValueCommand(typing.Callable):
+class CalculateMatrixCellValueCommand(typing.Callable):
     """This command calculates the value of the cell based on the first matrix row and the second matrix column
     """
     __slots__ = ("_row", "_column")
@@ -25,7 +25,7 @@ class CalculateCellValueCommand(typing.Callable):
         return cell_value
 
 
-class ValidateMatricesCommand(typing.Callable):
+class ValidateMatrixSequenceCommand(typing.Callable):
     """This command checks if the sequence of matrices could be multiplied
     """
     __slots__ = ("_matrices",)
@@ -34,7 +34,7 @@ class ValidateMatricesCommand(typing.Callable):
         self._matrices = matrices
 
     def __call__(self) -> bool:
-        """Checks if first matrix columns count equals to second matrix rows count for each pair of consecutive matrices
+        """Checks if first matrix columns count equals to second matrix rows count for each pair of consecutive matrices in matrix sequence
 
         Returns:
             bool: True if sequence is valid, else False
@@ -46,7 +46,7 @@ class ValidateMatricesCommand(typing.Callable):
         return True
 
 
-class MultiprocessMultiplicationMatrixPairTaskBuilder(typing.Iterable):
+class MultiprocessMatrixPairMultiplicationTaskBuilder(typing.Iterable):
     """Builds tasks of calculation of each cell of a result matrix for matrix pair multiplication
     """
     __slots__ = ("_pool", "_matrix1", "_matrix2")
@@ -58,10 +58,10 @@ class MultiprocessMultiplicationMatrixPairTaskBuilder(typing.Iterable):
     def __iter__(self) -> typing.Iterator[typing.Callable]:
         for row_index in range(0, self._matrix1.column_len()):
             for column_index in range(0, self._matrix2.row_len()):
-                yield CalculateCellValueCommand(row=self._matrix1.get_row(row_index), column=self._matrix2.get_column(column_index))
+                yield CalculateMatrixCellValueCommand(row=self._matrix1.get_row(row_index), column=self._matrix2.get_column(column_index))
 
 
-class MultiprocessMultiplicationMatrixPairCommand(typing.Callable):
+class MultiprocessMatrixPairMultiplicationCommand(typing.Callable):
     """Performs the multiprocess multiplication of two matrices
     """
     __slots__ = ("_pool", "_matrix1", "_matrix2")
@@ -78,7 +78,7 @@ class MultiprocessMultiplicationMatrixPairCommand(typing.Callable):
             IMatrix: Result matrix
         """
 
-        task_builder = MultiprocessMultiplicationMatrixPairTaskBuilder(self._matrix1, self._matrix2)
+        task_builder = MultiprocessMatrixPairMultiplicationTaskBuilder(self._matrix1, self._matrix2)
         # here tasks are spread between a pool of workers (processes)
         tasks = [self._pool.apply_async(task) for task in task_builder.__iter__()]
         # waiting for tasks completion
@@ -92,7 +92,7 @@ class MultiprocessMultiplicationMatrixPairCommand(typing.Callable):
         return NDArrayMatrixAdapter(matrix=result_matrix)
 
 
-class MultiprocessMultiplicationCommand(typing.Callable):
+class MultiprocessMatrixSequenceMultiplicationCommand(typing.Callable):
     """Performs the multiprocess multiplication of matrix sequence
     """
     __slots__ = ("_matrices", "_pool")
@@ -111,6 +111,6 @@ class MultiprocessMultiplicationCommand(typing.Callable):
             IMatrix: Result matrix
         """
 
-        if not ValidateMatricesCommand(*self._matrices).__call__():
+        if not ValidateMatrixSequenceCommand(*self._matrices).__call__():
             raise ValueError("matrices could not be multiplied")
-        return functools.reduce(lambda matrix1, matrix2: MultiprocessMultiplicationMatrixPairCommand(self._pool, matrix1, matrix2).__call__(), self._matrices)
+        return functools.reduce(lambda matrix1, matrix2: MultiprocessMatrixPairMultiplicationCommand(self._pool, matrix1, matrix2).__call__(), self._matrices)
