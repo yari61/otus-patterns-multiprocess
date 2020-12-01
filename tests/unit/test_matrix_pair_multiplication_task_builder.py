@@ -1,5 +1,4 @@
 import unittest
-import unittest
 import random
 from unittest.mock import Mock, patch, call
 
@@ -9,7 +8,7 @@ from matrix_multiplication.commands import MatrixPairMultiplicationTaskBuilder
 class TestTaskBuilder(unittest.TestCase):
     """This test case checks if the task builder for matrix pair multiplication works correctly
     """
-    def test_tasks_amount(self):
+    def test_built_tasks_amount(self):
         matrix1 = Mock()
         matrix1.column_len.return_value = random.randint(5, 10)
         matrix2 = Mock()
@@ -18,7 +17,7 @@ class TestTaskBuilder(unittest.TestCase):
             task_builder = MatrixPairMultiplicationTaskBuilder(matrix1, matrix2)
             self.assertEqual(matrix1.column_len() * matrix2.row_len(), len([task for task in task_builder]))
 
-    def test_method_calls(self):
+    def test_required_methods_called(self):
         matrix1 = Mock()
         matrix1.column_len.return_value = random.randint(5, 10)
         matrix2 = Mock()
