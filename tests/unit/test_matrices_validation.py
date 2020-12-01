@@ -1,13 +1,21 @@
 import unittest
 import random
+import typing
 
 import numpy
 
 from matrix_multiplication.commands import ValidateMatrixSequenceCommand
 from matrix_multiplication.adapters import NDArrayMatrixAdapter
+from matrix_multiplication.interfaces import IMatrix
 
 
-def generate_valid_matrix_sequence():
+def generate_valid_matrix_sequence() -> typing.List[IMatrix]:
+    """Generates the sequence of matrices, which could be multiplied
+
+    Returns:
+        typing.List[IMatrix]: matrix sequence
+    """
+
     sequence_len = random.randint(2, 20)
     matrices = [NDArrayMatrixAdapter(numpy.zeros(shape=(random.randint(1, 20), random.randint(1, 20))))]
     for i in range(0, sequence_len):
@@ -15,7 +23,13 @@ def generate_valid_matrix_sequence():
     return matrices
 
 
-def generate_invalid_matrix_sequence():
+def generate_invalid_matrix_sequence() -> typing.List[IMatrix]:
+    """Generates the sequence of matrices, which could not be multiplied
+
+    Returns:
+        typing.List[IMatrix]: matrix sequence
+    """
+
     sequence_len = random.randint(2, 20)
     matrices = [NDArrayMatrixAdapter(numpy.zeros(shape=(random.randint(1, 20), random.randint(1, 20))))]
     for i in range(0, sequence_len):
