@@ -30,7 +30,7 @@ class ValidateMatrixSequenceCommand(typing.Callable):
     """
     __slots__ = ("_matrices",)
 
-    def __init__(self, *matrices: typing.List[IMatrix]) -> None:
+    def __init__(self, matrices: typing.List[IMatrix]) -> None:
         self._matrices = matrices
 
     def __call__(self) -> bool:
@@ -46,7 +46,7 @@ class ValidateMatrixSequenceCommand(typing.Callable):
         return True
 
 
-class MultiprocessMatrixPairMultiplicationTaskBuilder(typing.Iterable):
+class MatrixPairMultiplicationTaskBuilder(typing.Iterable):
     """Builds tasks of calculation of each cell of a result matrix for matrix pair multiplication
     """
     __slots__ = ("_pool", "_matrix1", "_matrix2")
@@ -55,7 +55,7 @@ class MultiprocessMatrixPairMultiplicationTaskBuilder(typing.Iterable):
         self._matrix1 = matrix1
         self._matrix2 = matrix2
 
-    def __iter__(self) -> typing.Iterator[typing.Callable]:
+    def __iter__(self) -> typing.Iterator[CalculateMatrixCellValueCommand]:
         for row_index in range(0, self._matrix1.column_len()):
             for column_index in range(0, self._matrix2.row_len()):
                 yield CalculateMatrixCellValueCommand(row=self._matrix1.get_row(row_index), column=self._matrix2.get_column(column_index))
@@ -78,7 +78,7 @@ class MultiprocessMatrixPairMultiplicationCommand(typing.Callable):
             IMatrix: Result matrix
         """
 
-        task_builder = MultiprocessMatrixPairMultiplicationTaskBuilder(self._matrix1, self._matrix2)
+        task_builder = MatrixPairMultiplicationTaskBuilder(self._matrix1, self._matrix2)
         # here tasks are spread between a pool of workers (processes)
         tasks = [self._pool.apply_async(task) for task in task_builder.__iter__()]
         # waiting for tasks completion
@@ -97,7 +97,7 @@ class MultiprocessMatrixSequenceMultiplicationCommand(typing.Callable):
     """
     __slots__ = ("_matrices", "_pool")
 
-    def __init__(self, pool: multiprocessing.Pool, *matrices: typing.List[IMatrix]) -> None:
+    def __init__(self, pool: multiprocessing.Pool, matrices: typing.List[IMatrix]) -> None:
         self._matrices = matrices
         self._pool = pool
 
@@ -111,6 +111,6 @@ class MultiprocessMatrixSequenceMultiplicationCommand(typing.Callable):
             IMatrix: Result matrix
         """
 
-        if not ValidateMatrixSequenceCommand(*self._matrices).__call__():
+        if not ValidateMatrixSequenceCommand(self._matrices).__call__():
             raise ValueError("matrices could not be multiplied")
         return functools.reduce(lambda matrix1, matrix2: MultiprocessMatrixPairMultiplicationCommand(self._pool, matrix1, matrix2).__call__(), self._matrices)

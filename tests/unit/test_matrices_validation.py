@@ -29,12 +29,12 @@ def generate_invalid_matrix_sequence():
 class TestMatricesValidation(unittest.TestCase):
     def test_ndarray_row_len_eq_to_col_len(self):
         matrices = generate_valid_matrix_sequence()
-        command = ValidateMatrixSequenceCommand(*matrices)
+        command = ValidateMatrixSequenceCommand(matrices)
         self.assertTrue(command.__call__())
 
     def test_ndarray_row_len_ne_to_col_len(self):
         matrices = generate_invalid_matrix_sequence()
-        command = ValidateMatrixSequenceCommand(*matrices)
+        command = ValidateMatrixSequenceCommand(matrices)
         self.assertFalse(command.__call__())
 
 if __name__ == "__main__":
