@@ -2,7 +2,7 @@ import unittest
 import random
 import math
 
-from matrix_multiplication.commands.calculate_cell_value import CalculateCellValueCommand
+from matrix_multiplication.commands import CalculateCellValueCommand
 
 
 class TestCellCalculation(unittest.TestCase):

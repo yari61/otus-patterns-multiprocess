@@ -3,8 +3,8 @@ import random
 
 import numpy
 
-from matrix_multiplication.commands.validate_matrices import ValidateMatricesCommand
-from matrix_multiplication.adapters.matrix import NDArrayMatrixAdapter
+from matrix_multiplication.commands import ValidateMatricesCommand
+from matrix_multiplication.adapters import NDArrayMatrixAdapter
 
 
 def generate_valid_matrix_sequence():
