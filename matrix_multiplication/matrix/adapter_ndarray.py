@@ -1,6 +1,6 @@
 import numpy
 
-from matrix_multiplication.interfaces import IMatrix
+from .abc import IMatrix
 
 
 class NDArrayMatrixAdapter(IMatrix):

@@ -5,8 +5,8 @@ import typing
 import numpy
 
 from matrix_multiplication.commands import ValidateMatrixSequenceCommand
-from matrix_multiplication.adapters import NDArrayMatrixAdapter
-from matrix_multiplication.interfaces import IMatrix
+from matrix_multiplication.matrix.adapter_ndarray import NDArrayMatrixAdapter
+from matrix_multiplication.matrix.abc import IMatrix
 
 
 def generate_valid_matrix_sequence() -> typing.List[IMatrix]:

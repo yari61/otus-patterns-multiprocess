@@ -5,8 +5,8 @@ import multiprocessing
 
 import numpy
 
-from .interfaces import IMatrix
-from .adapters import NDArrayMatrixAdapter
+from .matrix.abc import IMatrix
+from .matrix import MatrixAdapterContainer
 
 
 class CalculateMatrixCellValueCommand(typing.Callable):
@@ -28,10 +28,31 @@ class CalculateMatrixCellValueCommand(typing.Callable):
             typing.SupportsFloat: result matrix cell value
         """
 
-        if len(self._row) != len(self._column):
-            raise ValueError(f"row and column lengths are not equal: row {len(self._row)}, column {len(self._column)}")
+        # if len(self._row) != len(self._column):
+            # raise ValueError(f"row and column lengths are not equal: row {len(self._row)}, column {len(self._column)}")
         cell_value = functools.reduce(lambda previous_sum, value_pair: value_pair[0] * value_pair[1] + previous_sum, zip(self._row, self._column), 0)
         return cell_value
+
+
+class ValidateMatrixPairCommand(typing.Callable):
+    """This command checks if the matrix pair could be multiplied
+    """
+    __slots__ = ("_matrix1", "_matrix2")
+
+    def __init__(self, matrix1: IMatrix, matrix2: IMatrix) -> None:
+        self._matrix1 = matrix1
+        self._matrix2 = matrix2
+
+    def __call__(self) -> bool:
+        """Checks if first matrix columns count equals to second matrix rows count for each pair of consecutive matrices in matrix sequence
+
+        Returns:
+            bool: True if sequence is valid, else False
+        """
+
+        if self._matrix1.row_len() != self._matrix2.column_len():
+            return False
+        return True
 
 
 class ValidateMatrixSequenceCommand(typing.Callable):
@@ -50,7 +71,8 @@ class ValidateMatrixSequenceCommand(typing.Callable):
         """
 
         for i in range(0, len(self._matrices) - 1):
-            if self._matrices[i].row_len() != self._matrices[i+1].column_len():
+            validation_command = ValidateMatrixPairCommand(matrix1=self._matrices[i], matrix2=self._matrices[i+1])
+            if not validation_command.__call__():
                 return False
         return True
 
@@ -58,7 +80,7 @@ class ValidateMatrixSequenceCommand(typing.Callable):
 class MatrixPairMultiplicationTaskBuilder(typing.Iterable):
     """Builds tasks of calculation of each cell of a result matrix for matrix pair multiplication
     """
-    __slots__ = ("_pool", "_matrix1", "_matrix2")
+    __slots__ = ("_matrix1", "_matrix2")
 
     def __init__(self, matrix1: IMatrix, matrix2: IMatrix):
         self._matrix1 = matrix1
@@ -84,6 +106,8 @@ class MultiprocessMatrixPairMultiplicationCommand(typing.Callable):
     """
     __slots__ = ("_pool", "_matrix1", "_matrix2")
 
+    _matrix_adapter_container = MatrixAdapterContainer()
+
     def __init__(self, pool: multiprocessing.Pool, matrix1: IMatrix, matrix2: IMatrix):
         self._pool = pool
         self._matrix1 = matrix1
@@ -107,7 +131,7 @@ class MultiprocessMatrixPairMultiplicationCommand(typing.Callable):
         for row_index in range(0, self._matrix1.column_len()):
             for column_index in range(0, self._matrix2.row_len()):
                 result_matrix[row_index][column_index] = task_results.popleft()
-        return NDArrayMatrixAdapter(matrix=result_matrix)
+        return self._matrix_adapter_container.matrix_adapter_factory.resolve(result_matrix)
 
 
 class MultiprocessMatrixSequenceMultiplicationCommand(typing.Callable):
@@ -122,16 +146,10 @@ class MultiprocessMatrixSequenceMultiplicationCommand(typing.Callable):
     def __call__(self) -> IMatrix:
         """Performs the multiprocess multiplication of matrix sequence
 
-        Raises:
-            ValueError: If some matrices pair could not be multiplied
-
         Returns:
             IMatrix: Result matrix
         """
 
-        # validating matrix sequence
-        if not ValidateMatrixSequenceCommand(self._matrices).__call__():
-            raise ValueError("matrices could not be multiplied")
         # firstly multiplying first and second matrices of the sequence
         # then multiplying each result of previous multiplication with the next matrix in the sequence
         return functools.reduce(lambda matrix1, matrix2: MultiprocessMatrixPairMultiplicationCommand(self._pool, matrix1, matrix2).__call__(), self._matrices)
