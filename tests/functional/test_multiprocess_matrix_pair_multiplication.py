@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import numpy
 
-from matrix_multiplication.commands import MultiprocessMatrixPairMultiplicationCommand
+from matrix_multiplication.commands.matrix_multiplication import MultiprocessMatrixPairMultiplicationCommand
 
 from tests.utils.generate_matrices import generate_valid_matrix_pair, generate_invalid_matrix_pair
 

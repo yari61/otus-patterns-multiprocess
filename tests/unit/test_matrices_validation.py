@@ -4,7 +4,7 @@ import typing
 
 import numpy
 
-from matrix_multiplication.commands import ValidateMatrixSequenceCommand
+from matrix_multiplication.commands.validation import ValidateMatrixSequenceCommand
 from matrix_multiplication.matrix.adapter_ndarray import NDArrayMatrixAdapter
 from matrix_multiplication.matrix.abc import IMatrix
 

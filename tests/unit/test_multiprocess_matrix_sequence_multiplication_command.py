@@ -2,7 +2,8 @@ import unittest
 import random
 from unittest.mock import Mock, patch, call
 
-from matrix_multiplication.commands import MultiprocessMatrixSequenceMultiplicationCommand, MultiprocessMatrixPairMultiplicationCommand, ValidateMatrixSequenceCommand
+from matrix_multiplication.commands.matrix_multiplication import MultiprocessMatrixSequenceMultiplicationCommand, MultiprocessMatrixPairMultiplicationCommand
+from matrix_multiplication.commands.validation import ValidateMatrixSequenceCommand
 
 
 class TestMatrixPairMultiplication(unittest.TestCase):

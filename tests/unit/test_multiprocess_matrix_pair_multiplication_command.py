@@ -2,7 +2,8 @@ import unittest
 import random
 from unittest.mock import Mock, patch, call
 
-from matrix_multiplication.commands import MultiprocessMatrixPairMultiplicationCommand, MatrixPairMultiplicationTaskBuilder
+from matrix_multiplication.commands.matrix_multiplication import MultiprocessMatrixPairMultiplicationCommand
+from matrix_multiplication.commands.task_iterator import MatrixPairMultiplicationTaskIterator
 
 
 class TestMatrixPairMultiplication(unittest.TestCase):
@@ -21,7 +22,7 @@ class TestMatrixPairMultiplication(unittest.TestCase):
         pool.apply_async.return_value = task
         # patching iter method of task builder
         # so it would not require matrices with existing rows and columns
-        with patch.object(MatrixPairMultiplicationTaskBuilder, "__iter__", return_value=[i for i in range(matrix1.column_len() * matrix2.row_len())]) as mock_task_builder:
+        with patch.object(MatrixPairMultiplicationTaskIterator, "__iter__", return_value=[i for i in range(matrix1.column_len() * matrix2.row_len())]) as mock_task_builder:
             command = MultiprocessMatrixPairMultiplicationCommand(pool=pool, matrix1=matrix1, matrix2=matrix2)
             result_matrix = command()
             # Checking that tasks were executed in the correct order
