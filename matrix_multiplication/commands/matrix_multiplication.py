@@ -1,3 +1,5 @@
+"""This module contains all commands required to multiply matrix sequence
+"""
 import functools
 import typing
 
@@ -19,9 +21,6 @@ class CalculateMatrixCellValueCommand(Task):
     def __call__(self) -> typing.SupportsFloat:
         """This command calculates the value of the cell based on the first matrix row and the second matrix column
 
-        Raises:
-            ValueError: if lengths of the first matrix row and second matrix column are not equal
-
         Returns:
             typing.SupportsFloat: result matrix cell value
         """
@@ -31,7 +30,7 @@ class CalculateMatrixCellValueCommand(Task):
 
 
 class MatrixPairMultiplicationTaskGenerator(TaskGenerator):
-    """Builds tasks of calculation of each cell of a result matrix for matrix pair multiplication
+    """Generates calculation tasks of each cell of a result matrix for matrix pair multiplication
     """
     __slots__ = ("_matrix1", "_matrix2", "_task_factory")
 
@@ -62,7 +61,7 @@ class MatrixPairMultiplicationTaskGenerator(TaskGenerator):
 
 
 class MatrixPairMultiplicationCommand(Task):
-    """Performs the multiprocess multiplication of two matrices
+    """Performs the multiplication of two matrices
     """
     __slots__ = ("_matrix1", "_matrix2", "_task_generator_factory", "_task_processor_factory", "_result_matrix_adapter_factory")
 
@@ -96,7 +95,7 @@ class MatrixPairMultiplicationCommand(Task):
 
 
 class MatrixSequenceMultiplicationCommand(Task):
-    """Performs the multiprocess multiplication of matrix sequence
+    """Performs the multiplication of matrix sequence
     """
     __slots__ = ("_matrices", "_matrix_pair_multiplication_command_factory")
 

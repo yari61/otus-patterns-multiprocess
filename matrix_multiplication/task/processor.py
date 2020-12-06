@@ -11,7 +11,7 @@ class MultiprocessTaskProcessor(TaskProcessor):
         self._pool = pool
         self._tasks = tasks
 
-    def __call__(self):
+    def __call__(self) -> typing.Iterable[object]:
         # here tasks are spread between a pool of workers (processes)
         tasks = [self._pool.apply_async(task) for task in self._tasks]
         # waiting for tasks completion

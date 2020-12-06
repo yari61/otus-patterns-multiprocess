@@ -3,7 +3,7 @@ import typing
 
 
 class ABCMatrix(abc.ABC):
-    """Matrix interface
+    """Matrix abstract class
     """
     @abc.abstractmethod
     def get_row(self, index: int) -> typing.Iterable[typing.SupportsFloat]:
