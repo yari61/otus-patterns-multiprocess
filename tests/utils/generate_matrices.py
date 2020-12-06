@@ -2,10 +2,10 @@ import typing
 import random
 from unittest.mock import Mock
 
-from matrix_multiplication.matrix.abc import IMatrix
+from matrix_multiplication.abc.matrix import ABCMatrix
 
 
-def generate_mock_matrix(row_len_range=range(0, random.randint(5, 10)), column_len_range=range(0, random.randint(5, 10))) -> IMatrix:
+def generate_mock_matrix(row_len_range=range(0, random.randint(5, 10)), column_len_range=range(0, random.randint(5, 10))) -> ABCMatrix:
     matrix = Mock()
     matrix.row_len.return_value = random.choice(row_len_range)
     matrix.column_len.return_value = random.choice(column_len_range)
@@ -14,24 +14,24 @@ def generate_mock_matrix(row_len_range=range(0, random.randint(5, 10)), column_l
     return matrix
 
 
-def generate_valid_matrix_pair() -> typing.Tuple[IMatrix, IMatrix]:
+def generate_valid_matrix_pair() -> typing.Tuple[ABCMatrix, ABCMatrix]:
     shared_dimension = random.randint(5, 10)
     matrix1 = generate_mock_matrix(row_len_range=[shared_dimension])
     matrix2 = generate_mock_matrix(column_len_range=[shared_dimension])
     return (matrix1, matrix2)
 
 
-def generate_invalid_matrix_pair() -> typing.Tuple[IMatrix, IMatrix]:
+def generate_invalid_matrix_pair() -> typing.Tuple[ABCMatrix, ABCMatrix]:
     matrix1 = generate_mock_matrix()
     matrix2 = generate_mock_matrix(column_len_range=[i for i in range(0, random.randint(5, 10)) if i != matrix1.row_len()])
     return (matrix1, matrix2)
 
 
-def generate_valid_matrix_sequence() -> typing.List[IMatrix]:
+def generate_valid_matrix_sequence() -> typing.List[ABCMatrix]:
     """Generates the sequence of matrices, which could be multiplied
 
     Returns:
-        typing.List[IMatrix]: matrix sequence
+        typing.List[ABCMatrix]: matrix sequence
     """
 
     sequence_len = random.randint(2, 20)
@@ -41,11 +41,11 @@ def generate_valid_matrix_sequence() -> typing.List[IMatrix]:
     return matrices
 
 
-def generate_invalid_matrix_sequence() -> typing.List[IMatrix]:
+def generate_invalid_matrix_sequence() -> typing.List[ABCMatrix]:
     """Generates the sequence of matrices, which could not be multiplied
 
     Returns:
-        typing.List[IMatrix]: matrix sequence
+        typing.List[ABCMatrix]: matrix sequence
     """
 
     sequence_len = random.randint(2, 20)
