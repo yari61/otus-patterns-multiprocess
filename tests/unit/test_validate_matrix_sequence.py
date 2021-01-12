@@ -14,26 +14,18 @@ class CommandContainer(containers.DeclarativeContainer):
 
     validate_matrix_sequence = providers.Factory(
         ValidateMatrixSequence,
-        validate_matrix_pair_factory=validate_matrix_pair.provider
+        validate_matrix_pair=validate_matrix_pair
     )
 
 
 class TestCall(unittest.TestCase):
-    def test_task_created_for_each_pair(self):
-        validate_pair_factory = Mock()
+    def test_task_called_for_each_pair(self):
+        validate_matrix_pair = Mock()
         matrices = [Mock() for i in range(10)]
         container = CommandContainer()
-        command = container.validate_matrix_sequence(validate_matrix_pair_factory=validate_pair_factory)
+        command = container.validate_matrix_sequence(validate_matrix_pair=validate_matrix_pair)
         command(matrices=matrices)
-        validate_pair_factory.assert_has_calls([call(matrix1=matrices[i], matrix2=matrices[i+1]) for i in range(0, len(matrices) - 1)], any_order=True)
-
-    def test_task_called_for_each_pair(self):
-        validate_matrix_pair = Mock(Task)
-        matrices = [Mock() for i in range(10)]
-        container = CommandContainer(validate_matrix_pair=validate_matrix_pair)
-        command = container.validate_matrix_sequence()
-        command(matrices=matrices)
-        validate_matrix_pair.assert_has_calls([call() for i in range(0, len(matrices) - 1)], any_order=False)
+        validate_matrix_pair.assert_has_calls([call(matrix1=matrices[i], matrix2=matrices[i+1]) for i in range(0, len(matrices) - 1)], any_order=True)
 
 if __name__ == "__main__":
     unittest.main()

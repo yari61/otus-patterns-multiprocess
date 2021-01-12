@@ -4,7 +4,7 @@ from matrix_multiplication.abc import ABCMatrix
 from matrix_multiplication.task import MultiprocessTaskProcessor
 from matrix_multiplication.matrix.adapters import OneDimensionalListMatrixAdapter
 from matrix_multiplication.commands.matrix_multiplication import (CalculateMatrixCellValueCommand, MatrixPairMultiplicationTaskGenerator,
-                                                                  MatrixPairMultiplicationCommand, MatrixSequenceMultiplicationCommand, ValidateMatrixPairCommand, ValidateMatrixSequence)
+                                                                  MatrixPairMultiplicationCommand, MatrixSequenceMultiplicationCommand, ValidateMatrixPair, ValidateMatrixSequence)
 
 
 class MatrixMultiplicationCommandsContainer(containers.DeclarativeContainer):
@@ -24,7 +24,7 @@ class MatrixMultiplicationCommandsContainer(containers.DeclarativeContainer):
     sequence_multiplication_factory = providers.Factory(
         MatrixSequenceMultiplicationCommand, matrix_pair_multiplication_command_factory=pair_multiplication_factory.provider)
 
-    validate_matrix_pair = providers.Factory(ValidateMatrixPairCommand)
+    validate_matrix_pair = providers.Factory(ValidateMatrixPair)
 
     validate_sequence_factory = providers.Factory(
-        ValidateMatrixSequence, validate_matrix_pair_factory=validate_matrix_pair.provider)
+        ValidateMatrixSequence, validate_matrix_pair=validate_matrix_pair)

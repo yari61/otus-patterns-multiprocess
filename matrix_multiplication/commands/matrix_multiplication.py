@@ -126,23 +126,27 @@ class MatrixSequenceMultiplicationCommand(Task):
             lambda matrix1, matrix2: self._matrix_pair_multiplication_command_factory.__call__(matrix1=matrix1, matrix2=matrix2).__call__(), self._matrices)
 
 
-class ValidateMatrixPairCommand(Task):
+class ABCValidateMatrixPair:
+    def __call__(self, matrix1: ABCMatrix, matrix2: ABCMatrix) -> bool:
+        pass
+
+
+class ValidateMatrixPair(ABCValidateMatrixPair):
     """This command checks if the matrix pair could be multiplied
     """
-    __slots__ = ("_matrix1", "_matrix2")
+    __slots__ = tuple()
 
-    def __init__(self, matrix1: ABCMatrix, matrix2: ABCMatrix) -> None:
-        self._matrix1 = matrix1
-        self._matrix2 = matrix2
+    def __init__(self) -> None:
+        pass
 
-    def __call__(self) -> bool:
+    def __call__(self, matrix1: ABCMatrix, matrix2: ABCMatrix) -> bool:
         """Checks if first matrix columns number equals to second matrix rows number for each pair of consecutive matrices in matrix sequence
 
         Returns:
             bool: True if pair could be multiplied, else False
         """
 
-        if self._matrix1.row_len() != self._matrix2.column_len():
+        if matrix1.row_len() != matrix2.column_len():
             return False
         return True
 
@@ -150,10 +154,10 @@ class ValidateMatrixPairCommand(Task):
 class ValidateMatrixSequence(object):
     """This command checks if the sequence of matrices could be multiplied
     """
-    __slots__ = ("_validate_matrix_pair_factory",)
+    __slots__ = ("_validate_matrix_pair",)
 
-    def __init__(self, validate_matrix_pair_factory: providers.Factory) -> None:
-        self._validate_matrix_pair_factory = validate_matrix_pair_factory
+    def __init__(self, validate_matrix_pair: ABCValidateMatrixPair) -> None:
+        self._validate_matrix_pair = validate_matrix_pair
 
     def __call__(self, matrices: typing.Iterable[ABCMatrix]) -> bool:
         """Checks if first matrix columns number equals to second matrix rows number for each pair of consecutive matrices in matrix sequence
@@ -163,8 +167,6 @@ class ValidateMatrixSequence(object):
         """
 
         for i in range(0, len(matrices) - 1):
-            validation_command: Task = self._validate_matrix_pair_factory(
-                matrix1=matrices[i], matrix2=matrices[i+1])
-            if not validation_command.__call__():
+            if not self._validate_matrix_pair(matrix1=matrices[i], matrix2=matrices[i+1]):
                 return False
         return True
