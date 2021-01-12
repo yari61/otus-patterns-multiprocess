@@ -1,3 +1,5 @@
+"""This module tests multiprocess multiplication of matrix pair
+"""
 import multiprocessing
 import unittest
 from unittest.mock import Mock
@@ -9,7 +11,7 @@ from matrix_multiplication.matrix.adapters import OneDimensionalListMatrixAdapte
 from matrix_multiplication.task.processor import MultiprocessTaskProcessor
 from matrix_multiplication.commands.matrix_multiplication import (
     MatrixPairMultiplicationCommand, MatrixPairMultiplicationTaskGenerator, CalculateMatrixCellValueCommand)
-from .utils.generate_matrices import generate_valid_matrix_pair
+from tests.functional.utils.generate_matrices import generate_valid_matrix_pair
 
 
 class CommandContainer(containers.DeclarativeContainer):
@@ -24,7 +26,7 @@ class CommandContainer(containers.DeclarativeContainer):
 
 
 class TestMultiprocessMatrixPairMultiplication(unittest.TestCase):
-    def test_zero_matrices_multiplication(self):
+    def test_zero_matrix_pair_multiplication(self):
         container = CommandContainer()
         matrix1, matrix2 = generate_valid_matrix_pair()
         with multiprocessing.Pool() as pool:

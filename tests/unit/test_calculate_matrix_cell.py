@@ -1,11 +1,10 @@
 import unittest
 import random
-import math
 
 from matrix_multiplication.commands.matrix_multiplication import CalculateMatrixCellValueCommand
 
 
-class TestCellCalculation(unittest.TestCase):
+class TestCall(unittest.TestCase):
     """This test case checks if the calculation of any matrix cell works correctly
     """
     def test_calculation(self):
