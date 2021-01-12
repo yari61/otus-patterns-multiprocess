@@ -147,7 +147,7 @@ class ValidateMatrixPairCommand(Task):
         return True
 
 
-class ValidateMatrixSequenceCommand(object):
+class ValidateMatrixSequence(object):
     """This command checks if the sequence of matrices could be multiplied
     """
     __slots__ = ("_validate_matrix_pair_factory",)
