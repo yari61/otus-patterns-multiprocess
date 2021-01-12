@@ -61,28 +61,23 @@ class MatrixPairMultiplicationTaskGenerator(TaskGenerator):
                 yield self._task_factory(row=self._matrix1.get_row(row_index), column=self._matrix2.get_column(column_index))
 
 
-class MatrixPairMultiplicationCommand(Task):
+class ABCMultiplyMatrixPair:
+    def __call__(self, matrix1: ABCMatrix, matrix2: ABCMatrix) -> ABCMatrix:
+        pass
+
+
+class MultiplyMatrixPair(ABCMultiplyMatrixPair):
     """Performs the multiplication of two matrices
     """
-    __slots__ = ("_matrix1", "_matrix2", "_task_generator_factory",
+    __slots__ = ("_task_generator_factory",
                  "_task_processor_factory", "_result_matrix_adapter_factory")
 
-    def __init__(
-        self,
-        matrix1: ABCMatrix,
-        matrix2: ABCMatrix,
-        task_generator_factory: providers.Factory,
-        task_processor_factory: providers.Factory,
-        matrix_adapter_factory: providers.Factory
-    ) -> None:
-
-        self._matrix1 = matrix1
-        self._matrix2 = matrix2
+    def __init__(self, task_generator_factory: providers.Factory, task_processor_factory: providers.Factory, matrix_adapter_factory: providers.Factory) -> None:
         self._task_generator_factory = task_generator_factory
         self._task_processor_factory = task_processor_factory
         self._result_matrix_adapter_factory = matrix_adapter_factory
 
-    def __call__(self) -> ABCMatrix:
+    def __call__(self, matrix1: ABCMatrix, matrix2: ABCMatrix) -> ABCMatrix:
         """Performs the multiprocess multiplication of two matrices
 
         Returns:
@@ -90,30 +85,24 @@ class MatrixPairMultiplicationCommand(Task):
         """
 
         task_generator: TaskGenerator = self._task_generator_factory(
-            matrix1=self._matrix1, matrix2=self._matrix2)
+            matrix1=matrix1, matrix2=matrix2)
         task_processor: TaskProcessor = self._task_processor_factory(
             tasks=[task for task in task_generator.__iter__()])
         task_results = task_processor.__call__()
         shape: typing.Tuple[int, int] = (
-            self._matrix1.column_len(), self._matrix2.row_len())
+            matrix1.column_len(), matrix2.row_len())
         return self._result_matrix_adapter_factory(cells=task_results, shape=shape)
 
 
-class MatrixSequenceMultiplicationCommand(Task):
+class MultiplyMatrixSequence(object):
     """Performs the multiplication of matrix sequence
     """
-    __slots__ = ("_matrices", "_matrix_pair_multiplication_command_factory")
+    __slots__ = ("_multiply_matrix_pair")
 
-    def __init__(
-        self,
-        matrices: typing.Iterable[ABCMatrix],
-        matrix_pair_multiplication_command_factory: providers.Factory
-    ) -> None:
+    def __init__(self, multiply_matrix_pair: ABCMultiplyMatrixPair) -> None:
+        self._multiply_matrix_pair = multiply_matrix_pair
 
-        self._matrices = matrices
-        self._matrix_pair_multiplication_command_factory = matrix_pair_multiplication_command_factory
-
-    def __call__(self) -> ABCMatrix:
+    def __call__(self, matrices: typing.Iterable[ABCMatrix]) -> ABCMatrix:
         """Performs the multiprocess multiplication of matrix sequence
 
         Returns:
@@ -123,7 +112,7 @@ class MatrixSequenceMultiplicationCommand(Task):
         # firstly multiplying first and second matrices of the sequence
         # then multiplying each result of previous multiplication with the next matrix in the sequence
         return functools.reduce(
-            lambda matrix1, matrix2: self._matrix_pair_multiplication_command_factory.__call__(matrix1=matrix1, matrix2=matrix2).__call__(), self._matrices)
+            lambda matrix1, matrix2: self._multiply_matrix_pair(matrix1=matrix1, matrix2=matrix2), matrices)
 
 
 class ABCValidateMatrixPair:

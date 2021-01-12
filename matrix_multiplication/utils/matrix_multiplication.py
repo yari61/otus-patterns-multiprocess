@@ -12,8 +12,8 @@ def multiprocess_matrices_multiplication(pool: multiprocessing.Pool, matrices: t
     validation_command = commands_container.validate_sequence_factory()
     if not validation_command(matrices=matrices):
         raise ValueError("matrices could not be multiplied")
-    multiplication_command = commands_container.sequence_multiplication_factory(matrices=matrices)
-    return multiplication_command()
+    multiplication_command = commands_container.multiply_matrix_sequence()
+    return multiplication_command(matrices=matrices)
 
 if __name__ == "__main__":
     pass
