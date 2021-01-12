@@ -5,6 +5,22 @@ import numpy
 from matrix_multiplication.abc.matrix import ABCMatrix
 
 
+def to_ndarray(matrix: ABCMatrix) -> numpy.ndarray:
+    """Converts :class:`ABCMatrix` to :class:`numpy.ndarray`
+
+    Args:
+        matrix (ABCMatrix): Matrix object to convert
+
+    Returns:
+        numpy.ndarray: Converted object
+    """
+    rows = list()
+    for i in range(0, matrix.column_len()):
+        row = matrix.get_row(i)
+        rows.append(row)
+    return numpy.array(rows)
+
+
 class NDArrayMatrixAdapter(ABCMatrix):
     """Adapts numpy.ndarray object to ABCMatrix interface
     """
