@@ -147,30 +147,24 @@ class ValidateMatrixPairCommand(Task):
         return True
 
 
-class ValidateMatrixSequenceCommand(Task):
+class ValidateMatrixSequenceCommand(object):
     """This command checks if the sequence of matrices could be multiplied
     """
-    __slots__ = ("_matrices", "_validate_matrix_pair_command_factory")
+    __slots__ = ("_validate_matrix_pair_factory",)
 
-    def __init__(
-        self,
-        matrices: typing.Iterable[ABCMatrix],
-        validate_matrix_pair_command_factory: providers.Factory
-    ) -> None:
+    def __init__(self, validate_matrix_pair_factory: providers.Factory) -> None:
+        self._validate_matrix_pair_factory = validate_matrix_pair_factory
 
-        self._matrices = matrices
-        self._validate_matrix_pair_command_factory = validate_matrix_pair_command_factory
-
-    def __call__(self) -> bool:
+    def __call__(self, matrices: typing.Iterable[ABCMatrix]) -> bool:
         """Checks if first matrix columns number equals to second matrix rows number for each pair of consecutive matrices in matrix sequence
 
         Returns:
             bool: True if sequence is valid, else False
         """
 
-        for i in range(0, len(self._matrices) - 1):
-            validation_command: Task = self._validate_matrix_pair_command_factory(
-                matrix1=self._matrices[i], matrix2=self._matrices[i+1])
+        for i in range(0, len(matrices) - 1):
+            validation_command: Task = self._validate_matrix_pair_factory(
+                matrix1=matrices[i], matrix2=matrices[i+1])
             if not validation_command.__call__():
                 return False
         return True
