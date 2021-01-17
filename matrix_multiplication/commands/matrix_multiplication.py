@@ -1,28 +1,33 @@
-"""This module contains all commands required to multiply matrix sequence
+"""Module for concrete implementations of classes required to multiply matrix sequence
 """
+from __future__ import annotations
 import functools
-import typing
+from typing import Iterable, List, Tuple
 
-from dependency_injector import providers
+import numpy as np
 
-from matrix_multiplication.abc.matrix import ABCMatrix
-from matrix_multiplication.abc.task import Task, TaskGenerator, TaskProcessor
+from matrix_multiplication.abc.matrix import (
+    ABCMatrix, ABCMutableMatrix, LeftMultipliableMatrix, RightMultipliableMatrix)
+from matrix_multiplication.abc.task import TaskProcessor
+from matrix_multiplication.abc.matrix_multiplication import (
+    ABCCalculateCell, ABCBuildTasks, ABCAggregateResult, ABCTaskManager, ABCMultiplyMatrixPair, ABCValidateMatrixPair)
+from matrix_multiplication.matrix.adapters import NDArrayMatrixAdapter
 
 
-class CalculateMatrixCellValueCommand(Task):
-    """This command calculates the value of the cell based on the first matrix row and the second matrix column
+class CalculateCell(ABCCalculateCell):
+    """Calculates the value of the cell based on the first matrix row and the second matrix column
     """
     __slots__ = ("_row", "_column")
 
-    def __init__(self, row: typing.Iterable[typing.SupportsFloat], column: typing.Iterable[typing.SupportsFloat]) -> None:
+    def __init__(self, row: Iterable[float], column: Iterable[float]) -> None:
         self._row = row
         self._column = column
 
-    def __call__(self) -> typing.SupportsFloat:
+    def __call__(self) -> float:
         """This command calculates the value of the cell based on the first matrix row and the second matrix column
 
         Returns:
-            typing.SupportsFloat: result matrix cell value
+            float: result matrix cell value
         """
 
         cell_value = functools.reduce(
@@ -30,98 +35,97 @@ class CalculateMatrixCellValueCommand(Task):
         return cell_value
 
 
-class MatrixPairMultiplicationTaskGenerator(TaskGenerator):
-    """Generates calculation tasks of each cell of a result matrix for matrix pair multiplication
+class BuildTasks(ABCBuildTasks):
+    """Builds list of matrix cell calculation tasks
     """
-    __slots__ = ("_matrix1", "_matrix2", "_task_factory")
+    __slots__ = tuple()
 
-    def __init__(
-        self,
-        matrix1: ABCMatrix,
-        matrix2: ABCMatrix,
-        task_factory: providers.Factory
-    ) -> None:
-
-        self._matrix1 = matrix1
-        self._matrix2 = matrix2
-        self._task_factory = task_factory
-
-    def __iter__(self) -> typing.Iterator[Task]:
-        """Iterates over cell value calculation tasks in order from the upper left cell to the lower right walking through rows
-
-        Returns:
-            Task: cell value calculation task
-
-        Yields:
-            Iterator[Task]: cell value calculation tasks
-        """
-
-        for row_index in range(0, self._matrix1.column_len()):
-            for column_index in range(0, self._matrix2.row_len()):
-                yield self._task_factory(row=self._matrix1.get_row(row_index), column=self._matrix2.get_column(column_index))
-
-
-class ABCMultiplyMatrixPair:
-    def __call__(self, matrix1: ABCMatrix, matrix2: ABCMatrix) -> ABCMatrix:
+    def __init__(self) -> None:
         pass
+
+    def __call__(self, matrix1: LeftMultipliableMatrix, matrix2: RightMultipliableMatrix) -> List[ABCCalculateCell]:
+        tasks = list()
+        for row_index in range(0, matrix1.column_len()):
+            for column_index in range(0, matrix2.row_len()):
+                row, column = matrix1.get_row(row_index), matrix2.get_column(column_index)
+                task = self.create_task(row=row, column=column)
+                tasks.append(task)
+        return tasks
+
+    @staticmethod
+    def create_task(row: Iterable[float], column: Iterable[float]) -> ABCCalculateCell:
+        return CalculateCell(row=row, column=column)
+
+
+class AggregateResult(ABCAggregateResult):
+    """Aggregates list of task results into matrix of given shape
+    """
+    __slots__ = tuple()
+
+    def __init__(self):
+        pass
+
+    def __call__(self, shape: Tuple[int, int], results: List[float]) -> ABCMutableMatrix:
+        results_2d = np.array([results])
+        matrix = self.create_matrix(matrix=results_2d)
+        matrix.reshape(new_shape=shape)
+        return matrix
+
+    @staticmethod
+    def create_matrix(matrix: np.ndarray) -> ABCMutableMatrix:
+        return NDArrayMatrixAdapter(matrix=matrix)
+
+
+class TaskManager(ABCTaskManager):
+    """Manages tasks builing and results aggregation
+    """
+    __slots__ = ("_build_tasks", "_aggregate_result")
+
+    def __init__(self, build_tasks: ABCBuildTasks, aggregate_result: ABCAggregateResult) -> None:
+        self._build_tasks = build_tasks
+        self._aggregate_result = aggregate_result
+
+    def build_tasks(self, matrix1: LeftMultipliableMatrix, matrix2: RightMultipliableMatrix) -> List[ABCCalculateCell]:
+        return self._build_tasks(matrix1=matrix1, matrix2=matrix2)
+
+    def handle_results(self, shape, results: Iterable[float]) -> ABCMatrix:
+        return self._aggregate_result(shape=shape, results=results)
 
 
 class MultiplyMatrixPair(ABCMultiplyMatrixPair):
-    """Performs the multiplication of two matrices
+    """Multiplies two matrices
     """
-    __slots__ = ("_task_generator_factory",
-                 "_task_processor_factory", "_result_matrix_adapter_factory")
+    __slots__ = ("_task_manager", "_task_processor")
 
-    def __init__(self, task_generator_factory: providers.Factory, task_processor_factory: providers.Factory, matrix_adapter_factory: providers.Factory) -> None:
-        self._task_generator_factory = task_generator_factory
-        self._task_processor_factory = task_processor_factory
-        self._result_matrix_adapter_factory = matrix_adapter_factory
+    def __init__(self, task_manager: ABCTaskManager, task_processor: TaskProcessor) -> None:
+        self._task_manager = task_manager
+        self._task_processor = task_processor
 
-    def __call__(self, matrix1: ABCMatrix, matrix2: ABCMatrix) -> ABCMatrix:
-        """Performs the multiprocess multiplication of two matrices
-
-        Returns:
-            ABCMatrix: Result matrix
-        """
-
-        task_generator: TaskGenerator = self._task_generator_factory(
+    def __call__(self, matrix1: LeftMultipliableMatrix, matrix2: RightMultipliableMatrix) -> ABCMatrix:
+        tasks = self._task_manager.build_tasks(
             matrix1=matrix1, matrix2=matrix2)
-        task_processor: TaskProcessor = self._task_processor_factory(
-            tasks=[task for task in task_generator.__iter__()])
-        task_results = task_processor.__call__()
-        shape: typing.Tuple[int, int] = (
-            matrix1.column_len(), matrix2.row_len())
-        return self._result_matrix_adapter_factory(cells=task_results, shape=shape)
+        results = self._task_processor(tasks=tasks)
+        shape = (matrix1.column_len(), matrix2.row_len())
+        return self._task_manager.handle_results(shape=shape, results=results)
 
 
 class MultiplyMatrixSequence(object):
-    """Performs the multiplication of matrix sequence
+    """Multiplies matrix sequence
     """
     __slots__ = ("_multiply_matrix_pair")
 
     def __init__(self, multiply_matrix_pair: ABCMultiplyMatrixPair) -> None:
         self._multiply_matrix_pair = multiply_matrix_pair
 
-    def __call__(self, matrices: typing.Iterable[ABCMatrix]) -> ABCMatrix:
-        """Performs the multiprocess multiplication of matrix sequence
-
-        Returns:
-            ABCMatrix: Result matrix
-        """
-
+    def __call__(self, matrices: Iterable[ABCMatrix]) -> ABCMatrix:
         # firstly multiplying first and second matrices of the sequence
         # then multiplying each result of previous multiplication with the next matrix in the sequence
         return functools.reduce(
             lambda matrix1, matrix2: self._multiply_matrix_pair(matrix1=matrix1, matrix2=matrix2), matrices)
 
 
-class ABCValidateMatrixPair:
-    def __call__(self, matrix1: ABCMatrix, matrix2: ABCMatrix) -> bool:
-        pass
-
-
 class ValidateMatrixPair(ABCValidateMatrixPair):
-    """This command checks if the matrix pair could be multiplied
+    """Checks if the matrix pair could be multiplied
     """
     __slots__ = tuple()
 
@@ -141,14 +145,14 @@ class ValidateMatrixPair(ABCValidateMatrixPair):
 
 
 class ValidateMatrixSequence(object):
-    """This command checks if the sequence of matrices could be multiplied
+    """Checks if the sequence of matrices could be multiplied
     """
     __slots__ = ("_validate_matrix_pair",)
 
     def __init__(self, validate_matrix_pair: ABCValidateMatrixPair) -> None:
         self._validate_matrix_pair = validate_matrix_pair
 
-    def __call__(self, matrices: typing.Iterable[ABCMatrix]) -> bool:
+    def __call__(self, matrices: Iterable[ABCMatrix]) -> bool:
         """Checks if first matrix columns number equals to second matrix rows number for each pair of consecutive matrices in matrix sequence
 
         Returns:
