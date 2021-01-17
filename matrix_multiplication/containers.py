@@ -1,30 +1,29 @@
+"""Module with IoC containers for commands building
+"""
+from __future__ import annotations
+import numpy
 from dependency_injector import containers, providers
 
 from matrix_multiplication.abc import ABCMatrix
 from matrix_multiplication.task import MultiprocessTaskProcessor
-from matrix_multiplication.matrix.adapters import OneDimensionalListMatrixAdapter
-from matrix_multiplication.commands.matrix_multiplication import (CalculateMatrixCellValueCommand, MatrixPairMultiplicationTaskGenerator,
-                                                                  MultiplyMatrixPair, MultiplyMatrixSequence, ValidateMatrixPair, ValidateMatrixSequence)
+from matrix_multiplication.matrix.adapters import NDArrayMatrixAdapter
+from matrix_multiplication.commands.matrix_multiplication import (
+    CalculateCell, BuildTasks, AggregateResult, TaskManager, MultiplyMatrixPair, MultiplyMatrixSequence, ValidateMatrixPair, ValidateMatrixSequence)
 
 
 class MatrixMultiplicationCommandsContainer(containers.DeclarativeContainer):
-    matrix_adapter_factory = providers.Factory(OneDimensionalListMatrixAdapter)
+    build_tasks = providers.Factory(BuildTasks)
+    aggregate_result = providers.Factory(AggregateResult)
+    task_manager = providers.Factory(
+        TaskManager, build_tasks=build_tasks, aggregate_result=aggregate_result)
 
-    cell_calculation_factory = providers.Factory(
-        CalculateMatrixCellValueCommand)
+    task_processor = providers.Factory(MultiprocessTaskProcessor)
 
-    task_generator_factory = providers.Factory(
-        MatrixPairMultiplicationTaskGenerator, task_factory=cell_calculation_factory.provider)
-
-    task_processor_factory = providers.Factory(MultiprocessTaskProcessor)
-
-    multiply_matrix_pair = providers.Factory(MultiplyMatrixPair, task_generator_factory=task_generator_factory.provider,
-                                                    task_processor_factory=task_processor_factory.provider, matrix_adapter_factory=matrix_adapter_factory.provider)
-
+    multiply_matrix_pair = providers.Factory(
+        MultiplyMatrixPair, task_manager=task_manager, task_processor=task_processor)
     multiply_matrix_sequence = providers.Factory(
         MultiplyMatrixSequence, multiply_matrix_pair=multiply_matrix_pair)
 
     validate_matrix_pair = providers.Factory(ValidateMatrixPair)
-
-    validate_sequence_factory = providers.Factory(
+    validate_matrix_sequence = providers.Factory(
         ValidateMatrixSequence, validate_matrix_pair=validate_matrix_pair)
