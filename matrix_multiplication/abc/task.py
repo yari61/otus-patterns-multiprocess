@@ -1,3 +1,6 @@
+"""Module with abstract classes required for objects related with tasks
+"""
+from __future__ import annotations
 import abc
 import typing
 
@@ -5,12 +8,6 @@ import typing
 class Task(abc.ABC):
     @abc.abstractmethod
     def __call__(self):
-        pass
-
-
-class TaskGenerator(abc.ABC):
-    @abc.abstractmethod
-    def __iter__(self) -> typing.Iterator[Task]:
         pass
 
 
