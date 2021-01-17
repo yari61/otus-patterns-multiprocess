@@ -1,25 +1,25 @@
 """This module tests methods of :class:`MatrixPairMultiplicationCommand` in :module:`matrix_multiplication.commands.matrix_multiplication`
 """
+from __future__ import annotations
 import unittest
 from unittest.mock import Mock, MagicMock
 
 from dependency_injector import providers, containers
 
-from matrix_multiplication.abc.task import TaskGenerator, TaskProcessor
-from matrix_multiplication.abc.matrix import ABCMatrix
+from matrix_multiplication.abc.task import TaskProcessor
+from matrix_multiplication.abc.matrix_multiplication import ABCTaskManager
+from matrix_multiplication.abc.matrix import LeftMultipliableMatrix, RightMultipliableMatrix
 from matrix_multiplication.commands.matrix_multiplication import MultiplyMatrixPair
 
 
 class CommandContainer(containers.DeclarativeContainer):
-    task_generator_factory = providers.Factory(TaskGenerator)
-    task_processor_factory = providers.Factory(TaskProcessor)
-    matrix_adapter_factory = providers.Factory(ABCMatrix)
+    task_processor = providers.Factory(TaskProcessor)
+    task_manager = providers.Factory(ABCTaskManager)
 
     command_factory = providers.Factory(
         MultiplyMatrixPair,
-        task_generator_factory=task_generator_factory.provider,
-        task_processor_factory=task_processor_factory.provider,
-        matrix_adapter_factory=matrix_adapter_factory.provider
+        task_processor=task_processor,
+        task_manager=task_manager
     )
 
 
@@ -27,46 +27,47 @@ class TestCall(unittest.TestCase):
     """This test case checks if the __call__ method of matrix pair multiplication command works correctly
     """
 
-    def test_task_generator_initialized_once_with_matrix1_and_matrix2(self):
-        task_generator_factory = MagicMock()
-        matrix1, matrix2 = Mock(), Mock()
-        container = CommandContainer()
-        command = container.command_factory(
-            task_generator_factory=task_generator_factory, task_processor_factory=Mock(), matrix_adapter_factory=Mock())
+    def test_task_manager_generated_tasks_once_with_matrix1_and_matrix2(self):
+        task_manager = Mock(ABCTaskManager)
+        matrix1, matrix2 = Mock(LeftMultipliableMatrix), Mock(
+            RightMultipliableMatrix)
+        container = CommandContainer(
+            task_manager=task_manager, task_processor=MagicMock(TaskProcessor))
+        command = container.command_factory()
         command(matrix1=matrix1, matrix2=matrix2)
-        task_generator_factory.assert_called_once_with(
+        task_manager.build_tasks.assert_called_once_with(
             matrix1=matrix1, matrix2=matrix2)
 
-    def test_task_processor_initialized_once_with_generated_tasks(self):
-        task_processor_factory = Mock()
-        matrix1, matrix2 = Mock(), Mock()
-        container = CommandContainer(task_generator_factory=MagicMock(
-            TaskGenerator), matrix_adapter_factory=Mock(ABCMatrix))
-        command = container.command_factory(
-            task_processor_factory=task_processor_factory)
+    def test_task_processor_called_once_with_generated_tasks(self):
+        task_processor = Mock(TaskProcessor)
+        task_manager = Mock(ABCTaskManager)
+        matrix1, matrix2 = Mock(LeftMultipliableMatrix), Mock(
+            RightMultipliableMatrix)
+        container = CommandContainer(task_processor=task_processor, task_manager=task_manager)
+        command = container.command_factory()
         command(matrix1=matrix1, matrix2=matrix2)
-        task_processor_factory.assert_called_once_with(
-            tasks=[task for task in container.task_generator_factory().__iter__()])
+        task_processor.assert_called_once_with(
+            tasks=task_manager.build_tasks())
 
-    def test_result_matrix_adapter_initialized_once(self):
-        matrix_adapter_factory = Mock()
-        matrix1, matrix2 = Mock(), Mock()
-        container = CommandContainer(task_generator_factory=MagicMock(
-            TaskGenerator), task_processor_factory=MagicMock(TaskProcessor))
-        command = container.command_factory(
-            matrix_adapter_factory=matrix_adapter_factory)
+    def test_task_manager_aggregated_tasks_once(self):
+        task_processor = Mock(TaskProcessor)
+        task_manager = Mock(ABCTaskManager)
+        matrix1, matrix2 = Mock(LeftMultipliableMatrix), Mock(
+            RightMultipliableMatrix)
+        container = CommandContainer(task_processor=task_processor, task_manager=task_manager)
+        command = container.command_factory()
         command(matrix1=matrix1, matrix2=matrix2)
-        matrix_adapter_factory.assert_called_once()
+        task_manager.handle_results.assert_called_once()
 
     def test_matrix_returned(self):
-        matrix_adapter_factory = Mock()
-        matrix1, matrix2 = Mock(), Mock()
-        container = CommandContainer(task_generator_factory=MagicMock(
-            TaskGenerator), task_processor_factory=MagicMock(TaskProcessor))
-        command = container.command_factory(
-            matrix_adapter_factory=matrix_adapter_factory)
+        task_processor = Mock(TaskProcessor)
+        task_manager = Mock(ABCTaskManager)
+        matrix1, matrix2 = Mock(LeftMultipliableMatrix), Mock(
+            RightMultipliableMatrix)
+        container = CommandContainer(task_processor=task_processor, task_manager=task_manager)
+        command = container.command_factory()
         self.assertEqual(
-            command(matrix1=matrix1, matrix2=matrix2), matrix_adapter_factory())
+            command(matrix1=matrix1, matrix2=matrix2), task_manager.handle_results())
 
 
 if __name__ == "__main__":

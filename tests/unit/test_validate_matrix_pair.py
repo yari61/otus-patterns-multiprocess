@@ -1,5 +1,6 @@
 """This module tests methods of :class:`ValidateMatrixPair` in :module:`matrix_multiplication.commands.matrix_multiplication`
 """
+from __future__ import annotations
 import unittest
 from unittest.mock import Mock, call
 

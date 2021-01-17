@@ -69,10 +69,14 @@ class InvalidShapeSequenceFactory(ABCShapeSequenceFactory):
         errors_count = random.randint(*self._error_count_range)
         error_location = 0
         shapes = list()
-        for i in range(errors_count):
+        for i in range(errors_count + 1):
             step = random.randint(
-                1, length - error_location + i - errors_count)
-            shapes.extend(self._valid_shape_sequence_factory(length=step))
+                1, (length - error_location) - (errors_count - i))
+            new_shapes = self._valid_shape_sequence_factory(length=step)
+            if error_location != 0:
+                while shapes[-1][1] == new_shapes[0][0]:
+                    new_shapes = self._valid_shape_sequence_factory(length=step)
+            shapes.extend(new_shapes)
             error_location = error_location + step
         return shapes
 

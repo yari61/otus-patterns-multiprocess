@@ -1,5 +1,6 @@
 """This module tests methods of :class:`MultiprocessTaskProcessor` in :module:`matrix_multiplication.task.processor`
 """
+from __future__ import annotations
 import unittest
 import unittest.mock as mock
 from multiprocessing.pool import Pool
@@ -19,8 +20,8 @@ class TestCall(unittest.TestCase):
         tasks = [mock.Mock(Task) for i in range(10)]
         pool = mock.Mock(Pool)
         container = Container()
-        processor = container.processor(pool=pool, tasks=tasks)
-        processor()
+        processor = container.processor(pool=pool)
+        processor(tasks=tasks)
         pool.apply_async.assert_has_calls([mock.call(task) for task in tasks], any_order=True)
 
 
