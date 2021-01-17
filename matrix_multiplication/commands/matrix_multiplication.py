@@ -48,12 +48,12 @@ class BuildTasks(ABCBuildTasks):
         for row_index in range(0, matrix1.column_len()):
             for column_index in range(0, matrix2.row_len()):
                 row, column = matrix1.get_row(row_index), matrix2.get_column(column_index)
-                task = self.create_task(row=row, column=column)
+                task = self._create_task(row=row, column=column)
                 tasks.append(task)
         return tasks
 
     @staticmethod
-    def create_task(row: Iterable[float], column: Iterable[float]) -> ABCCalculateCell:
+    def _create_task(row: Iterable[float], column: Iterable[float]) -> ABCCalculateCell:
         return CalculateCell(row=row, column=column)
 
 
@@ -67,12 +67,12 @@ class AggregateResult(ABCAggregateResult):
 
     def __call__(self, shape: Tuple[int, int], results: List[float]) -> ABCMutableMatrix:
         results_2d = np.array([results])
-        matrix = self.create_matrix(matrix=results_2d)
+        matrix = self._create_matrix(matrix=results_2d)
         matrix.reshape(new_shape=shape)
         return matrix
 
     @staticmethod
-    def create_matrix(matrix: np.ndarray) -> ABCMutableMatrix:
+    def _create_matrix(matrix: np.ndarray) -> ABCMutableMatrix:
         return NDArrayMatrixAdapter(matrix=matrix)
 
 
@@ -88,7 +88,7 @@ class TaskManager(ABCTaskManager):
     def build_tasks(self, matrix1: LeftMultipliableMatrix, matrix2: RightMultipliableMatrix) -> List[ABCCalculateCell]:
         return self._build_tasks(matrix1=matrix1, matrix2=matrix2)
 
-    def handle_results(self, shape, results: Iterable[float]) -> ABCMatrix:
+    def handle_results(self, shape: Tuple[int, int], results: Iterable[float]) -> ABCMatrix:
         return self._aggregate_result(shape=shape, results=results)
 
 
