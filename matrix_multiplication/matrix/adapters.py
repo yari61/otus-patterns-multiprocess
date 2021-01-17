@@ -1,8 +1,11 @@
-import typing
+"""Module with matrix adapters
+"""
+from __future__ import annotations
+from typing import List, Tuple
 
 import numpy
 
-from matrix_multiplication.abc.matrix import ABCMatrix
+from matrix_multiplication.abc.matrix import ABCMatrix, ABCMutableMatrix
 
 
 def to_ndarray(matrix: ABCMatrix) -> numpy.ndarray:
@@ -21,7 +24,7 @@ def to_ndarray(matrix: ABCMatrix) -> numpy.ndarray:
     return numpy.array(rows)
 
 
-class NDArrayMatrixAdapter(ABCMatrix):
+class NDArrayMatrixAdapter(ABCMutableMatrix):
     """Adapts numpy.ndarray object to ABCMatrix interface
     """
     __slots__ = ("_matrix",)
@@ -43,27 +46,8 @@ class NDArrayMatrixAdapter(ABCMatrix):
     def column_len(self) -> int:
         return self._matrix.shape[0]
 
+    def append(self, row: List[float]) -> None:
+        self._matrix = numpy.append(self._matrix, row)
 
-class OneDimensionalListMatrixAdapter(ABCMatrix):
-    """Adapts one dimensional list object to ABCMatrix interface
-    """
-    __slots__ = ("_matrix",)
-
-    def __init__(self, cells: typing.List[typing.SupportsFloat], shape: typing.Tuple[int, int]) -> None:
-        matrix = numpy.zeros(shape=shape)
-        for row_index in range(0, shape[0]):
-            for column_index in range(0, shape[1]):
-                matrix[row_index][column_index] = cells[row_index * shape[1] + column_index]
-        self._matrix = matrix
-
-    def get_row(self, index: int) -> numpy.ndarray:
-        return self._matrix[index, :]
-
-    def get_column(self, index: int) -> numpy.ndarray:
-        return self._matrix[:, index]
-
-    def row_len(self) -> int:
-        return self._matrix.shape[1]
-
-    def column_len(self) -> int:
-        return self._matrix.shape[0]
+    def reshape(self, new_shape: Tuple[int, int]) -> None:
+        self._matrix = self._matrix.reshape(new_shape)
