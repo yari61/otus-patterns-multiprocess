@@ -6,15 +6,15 @@ cd otus-patterns-multiprocess
 ```
 
 ## Virtual environment
-It is recommended to create a virtual environment at first
+It is recommended to create a virtual environment at first (.venv for example)
 ```
-python -m venv <virtual_env_name (.venv for example)>
+python -m venv .venv
 ```
 
 Then activate it with 
-- ```source <virtual_env_name>/bin/activate```
+- ```source .venv/bin/activate```
 on Unix-like systems, or
-- ```<virtual_env_name>\bin\activate```
+- ```.venv\bin\activate```
 if Your system runs Windows
 
 ## Installation
@@ -24,11 +24,19 @@ pip install -e .
 ```
 
 ## Testing
-To run tests execute this
+To run all tests execute this
 ```
 python -m unittest
 ```
+To run unit tests only
+```
+python -m unittest discover tests.unit
+```
+To run functional tests only
+```
+python -m unittest discover tests.functional
+```
 
-# Project structure
+# Project description
 ## Class diagram
 ![Alt](docs/images/uml_class_diagram.png)
